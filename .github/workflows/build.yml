@@ -1,4 +1,4 @@
-name: gh-ssh-keys CI
+name: x509-info CI
 
 on:
   push:
