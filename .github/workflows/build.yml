@@ -8,81 +8,42 @@ jobs:
     name: Check
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: stable
-          override: true
-      - uses: actions-rs/cargo@v1
-        with:
-          command: check
-      - uses: actions-rs/cargo@v1
-        with:
-          command: check
-          args: --no-default-features
+      - name: git checkout
+        uses: actions/checkout@v3
+      - name: install nix
+        uses: cachix/install-nix-action@v17
+      # This is a workaround for https://github.com/oxalica/rust-overlay/issues/54,
+      # avoiding link errors when running cargo commands with `nix develop`.
+      - name: Remove existing binaries from ~/.cargo/bin
+        run: rm --recursive --force --verbose ~/.cargo/bin
+      - name: check rust formatting
+        run: nix develop --command cargo fmt --check
+      - name: audit rust code
+        run: nix develop --command cargo-deny check
+      - name: clippy
+        run: nix develop --command cargo clippy -- -D warnings
 
-  test:
-    name: Test
+  test_and_build:
+    name: Test and build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions-rs/toolchain@v1
+      - name: git checkout
+        uses: actions/checkout@v3
+      - name: install nix
+        uses: cachix/install-nix-action@v17
+      - name: Set up Rust cache
+        uses: actions/cache@v3
         with:
-          profile: minimal
-          toolchain: stable
-          override: true
-      - uses: actions-rs/cargo@v1
-        with:
-          command: test
-      - uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --no-default-features
-
-  fmt:
-    name: Rustfmt
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: stable
-          override: true
-      - run: rustup component add rustfmt
-      - uses: actions-rs/cargo@v1
-        with:
-          command: fmt
-          args: --all -- --check
-
-  clippy:
-    name: Clippy
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: stable
-          override: true
-      - run: rustup component add clippy
-      - uses: actions-rs/cargo@v1
-        with:
-          command: clippy
-          args: -- -D warnings
-
-  run:
-    name: Run
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: stable
-          override: true
-      - uses: actions-rs/cargo@v1
-        with:
-          command: run
-          args: -- fcuny.net
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: x509-info-app-${{ hashFiles('**/Cargo.lock') }}
+      - name: test
+        run: nix develop --command cargo test
+      - name: build
+        run: nix build .
+      - name: validate
+        run: nix run . -- fcuny.net
