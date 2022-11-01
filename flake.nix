@@ -8,48 +8,53 @@
       url = "github:oxalica/rust-overlay";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    naersk.url = "github:nmattia/naersk";
   };
 
   outputs =
     { self
     , flake-utils
     , nixpkgs
-    , naersk
     , rust-overlay
     }:
+    let
+      # Borrow project metadata from the Rust config
+      meta = (builtins.fromTOML (builtins.readFile ./Cargo.toml)).package;
+      inherit (meta) name version;
 
+      overlays = [
+        # Rust helpers
+        (import rust-overlay)
+        # Build Rust toolchain using helpers from rust-overlay
+        (self: super: {
+          # This supplies cargo, rustc, rustfmt, etc.
+          rustToolchain = super.rust-bin.fromRustupToolchainFile ./rust-toolchain.toml;
+        })
+      ];
+    in
     flake-utils.lib.eachDefaultSystem
       (system:
       let
-        overlays = [ (import rust-overlay) ];
-        pkgs = import nixpkgs { inherit system overlays; };
-        rust-toolchain =
-          (pkgs.rust-bin.fromRustupToolchainFile ./rust-toolchain.toml).override {
-            extensions = [ "rust-src" ];
-          };
-        naersk-lib = naersk.lib."${system}".override {
-          rustc = rust-toolchain;
-        };
+        pkgs = import nixpkgs { inherit overlays system; };
       in
-      rec
       {
-        packages.x509-info = naersk-lib.buildPackage {
-          pname = "x509-info";
-          root = ./.;
-          buildInputs = with pkgs; [ ];
+        packages = rec {
+          default = x509-info;
+          x509-info = pkgs.rustPlatform.buildRustPackage {
+            pname = name;
+            inherit version;
+            src = ./.;
+            release = true;
+            cargoLock.lockFile = ./Cargo.lock;
+          };
         };
-
-        defaultPackage = packages.x509-info;
 
         devShell = pkgs.mkShell {
           nativeBuildInputs = with pkgs; [
-            rust-toolchain
+            rustToolchain
             cargo-audit
             cargo-deny
-            cargo-cross
             rust-analyzer
-          ] ++ pkgs.lib.optionals (pkgs.stdenv.isLinux) (with pkgs; [ cargo-watch ]);
+          ];
 
           shellHook = ''
             cargo --version
@@ -62,3 +67,4 @@
       };
     };
 }
+
