@@ -6,7 +6,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-chrono = "0.4"
+chrono = {version = "0.4.20", features = ["clock"], default-features = false }
 clap = {version = "4.0.18", features = ["derive", "cargo"]}
 rustls = "0.20.7"
 rustls-native-certs = "0.6.2"
