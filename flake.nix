@@ -6,7 +6,16 @@
     nixpkgs.url = "github:NixOS/nixpkgs";
     rust-overlay = {
       url = "github:oxalica/rust-overlay";
-      inputs.nixpkgs.follows = "nixpkgs";
+      inputs = {
+        nixpkgs.follows = "nixpkgs";
+      };
+    };
+    pre-commit-hooks = {
+      url = "github:cachix/pre-commit-hooks.nix";
+      inputs = {
+        flake-utils.follows = "flake-utils";
+        nixpkgs.follows = "nixpkgs";
+      };
     };
   };
 
@@ -15,6 +24,7 @@
     , flake-utils
     , nixpkgs
     , rust-overlay
+    , pre-commit-hooks
     }:
     let
       # Borrow project metadata from the Rust config
@@ -48,6 +58,25 @@
           };
         };
 
+        checks = {
+          pre-commit = pre-commit-hooks.lib.${system}.run {
+            src = ./.;
+            hooks = {
+              clippy = {
+                enable = true;
+                entry = pkgs.lib.mkForce "cargo clippy -- -D warnings";
+              };
+              nixpkgs-fmt = {
+                enable = true;
+              };
+              rustfmt = {
+                enable = true;
+                entry = pkgs.lib.mkForce "cargo fmt -- --check --color always";
+              };
+            };
+          };
+        };
+
         devShell = pkgs.mkShell {
           nativeBuildInputs = with pkgs; [
             rustToolchain
@@ -56,9 +85,7 @@
             rust-analyzer
           ];
 
-          shellHook = ''
-            cargo --version
-          '';
+          inherit (self.checks.${system}.pre-commit) shellHook;
         };
       })
     // {
