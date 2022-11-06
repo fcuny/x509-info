@@ -1,5 +1,7 @@
 # x509-info
 
+[![Build Status](https://ci.fcuny.net/api/badges/fcuny/x509-info/status.svg)](https://ci.fcuny.net/fcuny/x509-info)
+
 At this point it's pretty clear that I'll never remember the syntax for `openssl` to show various information about a certificate. At last I will not have to google for that syntax ever again.
 
 ``` shell

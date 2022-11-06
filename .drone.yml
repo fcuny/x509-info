@@ -1,0 +1,35 @@
+kind: pipeline
+type: docker
+name: checks
+
+trigger:
+  event:
+    - push
+    - pull_request
+    - cron
+
+steps:
+  - name: Run checks
+    image: nixpkgs/nix-flakes:nixos-22.05
+    commands:
+      - nix develop --command cargo fmt --check
+      - nix develop --command cargo-deny check
+      - nix develop --command cargo clippy -- -D warnings
+---
+kind: pipeline
+type: docker
+name: build
+
+trigger:
+  event:
+    - push
+    - pull_request
+    - cron
+
+steps:
+  - name: Run tests and build
+    image: nixpkgs/nix-flakes:nixos-22.05
+    commands:
+      - nix develop --command cargo test
+      - nix build .
+      - nix run . -- fcuny.net
