@@ -33,3 +33,17 @@ steps:
       - nix develop --command cargo test
       - nix build .
       - nix run . -- fcuny.net
+---
+kind: pipeline
+type: docker
+name: flakes-update
+trigger:
+  event:
+    - cron
+
+steps:
+  - name: update flakes
+    image: nixpkgs/nix-flakes:nixos-22.05
+    commands:
+      - nix flake update --commit-lock-file
+      - nix develop -c git push origin --all
