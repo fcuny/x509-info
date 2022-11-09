@@ -95,7 +95,7 @@
       })
     // {
       overlay = final: prev: {
-        x509-info = self.defaultPackage.${prev.system};
+        x509-info = self.packages.${prev.system}.default;
       };
     };
 }
