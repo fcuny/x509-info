@@ -40,7 +40,9 @@
           inherit system;
           overlays = [ (import rust-overlay) ];
         };
-        rust-toolchain = pkgs.rust-bin.fromRustupToolchainFile ./rust-toolchain.toml;
+        rust-toolchain = (pkgs.rust-bin.fromRustupToolchainFile ./rust-toolchain.toml).override {
+          extensions = [ "rust-src" ];
+        };
 
         craneLib = (crane.mkLib pkgs).overrideScope' (_: _: {
           cargo = rust-toolchain;
