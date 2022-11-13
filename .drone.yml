@@ -33,6 +33,7 @@ steps:
       - nix develop --command cargo test
       - nix build .
       - nix run . -- fcuny.net
+      - nix run . -- --format long fcuny.net
 ---
 kind: pipeline
 type: docker
