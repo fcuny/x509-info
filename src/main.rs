@@ -16,6 +16,10 @@ struct Args {
     #[clap(short, long, default_value_t = 443)]
     port: u16,
 
+    /// Accept invalid certificate
+    #[clap(short, long, default_value_t = false)]
+    insecure: bool,
+
     #[clap(short, long,value_enum, default_value_t = output::OutputFormat::Short)]
     format: output::OutputFormat,
 }
@@ -25,7 +29,7 @@ fn main() {
 
     let domain = args.domain;
 
-    let certs = client::get_certificates(domain, args.port);
+    let certs = client::get_certificates(domain, args.port, args.insecure);
 
     match certs {
         Ok(certs) => {

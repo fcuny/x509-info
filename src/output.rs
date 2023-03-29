@@ -28,16 +28,30 @@ impl OutputFormat {
         let not_after = chrono::Local.timestamp(cert.validity().not_after.timestamp(), 0);
         let now: DateTime<Local> = Local::now();
         let remaining = not_after - now;
-        println!(
-            "{} is valid until {} ({} days left)",
-            cert.subject()
-                .iter_common_name()
-                .next()
-                .and_then(|cn| cn.as_str().ok())
-                .unwrap(),
-            not_after.to_rfc2822(),
-            remaining.num_days(),
-        );
+
+        if remaining >= chrono::Duration::zero() {
+            println!(
+                "{}: {} ({} days left)",
+                cert.subject()
+                    .iter_common_name()
+                    .next()
+                    .and_then(|cn| cn.as_str().ok())
+                    .unwrap_or("<no name>"),
+                not_after.to_rfc2822(),
+                remaining.num_days(),
+            );
+        } else {
+            println!(
+                "{}: {} (it expired {} days ago)",
+                cert.subject()
+                    .iter_common_name()
+                    .next()
+                    .and_then(|cn| cn.as_str().ok())
+                    .unwrap_or("<no name>"),
+                not_after.to_rfc2822(),
+                remaining.num_days(),
+            );
+        }
     }
 
     fn to_text(self, cert: X509Certificate) {

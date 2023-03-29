@@ -7,8 +7,7 @@ At this point it's pretty clear that I'll never remember the syntax for `openssl
 ## Usage
 
 ``` shell
-> x509-info --help
-Usage: x509-info [OPTIONS] <DOMAIN>
+$ Usage: x509-info [OPTIONS] <DOMAIN>
 
 Arguments:
   <DOMAIN>
@@ -19,6 +18,9 @@ Options:
           Port to check
 
           [default: 443]
+
+  -i, --insecure
+          Accept invalid certificate
 
   -f, --format <FORMAT>
           [default: short]
@@ -37,27 +39,34 @@ Options:
 The default format will print a short message:
 
 ``` shell
-> x509-info twitter.com
-twitter.com is valid until Mon, 12 Dec 2022 15:59:59 -0800 (29 days left)
+$ x509-info twitter.com
+twitter.com: Mon, 11 Dec 2023 15:59:59 -0800 (257 days left)
 ```
 
 It's possible to get more details:
 
 ``` shell
-> x509-info --format long twitter.com
+$ x509-info --format=long twitter.com
 certificate
  version: V3
- serial: 0d:e1:52:69:6b:2f:96:70:d6:c7:db:18:ce:1c:71:a0
+ serial: 0a:2c:01:b8:2b:5d:47:73:9a:5a:01:1a:6f:dc:1a:20
  subject: C=US, ST=California, L=San Francisco, O=Twitter, Inc., CN=twitter.com
  issuer: C=US, O=DigiCert Inc, CN=DigiCert TLS RSA SHA256 2020 CA1
  validity
-  not before    : Sun, 12 Dec 2021 16:00:00 -0800
-  not after     : Mon, 12 Dec 2022 15:59:59 -0800
-  validity days : 364
-  remaining days: 29
+  not before    : Sat, 10 Dec 2022 16:00:00 -0800
+  not after     : Mon, 11 Dec 2023 15:59:59 -0800
+  validity days : 365
+  remaining days: 257
  SANs:
   DNS:twitter.com
   DNS:www.twitter.com
+```
+
+You can also check expired certificates:
+
+``` shell
+$ x509-info --insecure expired.badssl.com
+<no name>: Sun, 12 Apr 2015 16:59:59 -0700 (it expired -2907 days ago)
 ```
 
 ## Notes
