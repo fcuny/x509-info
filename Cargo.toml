@@ -2,8 +2,10 @@
 name = "x509-info"
 version = "0.1.0"
 edition = "2021"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+authors = ["Franck Cuny <franck@fcuny.net>"]
+description = "Print summary of x509 certificates."
+homepage = "https://git.fcuny.net/x509-info/about/"
+readme = "README.md"
 
 [dependencies]
 anyhow = "1.0.70"
