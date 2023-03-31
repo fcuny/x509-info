@@ -1,7 +1,7 @@
+use anyhow::{anyhow, Error};
 use rustls::{
     Certificate, ClientConfig, ClientConnection, OwnedTrustAnchor, RootCertStore, ServerName,
 };
-use std::error::Error;
 
 use std::io::Write;
 use std::sync::Arc;
@@ -31,7 +31,7 @@ pub fn get_certificates(
     domain: String,
     port: u16,
     insecure: bool,
-) -> Result<Vec<Certificate>, Box<dyn Error>> {
+) -> Result<Vec<Certificate>, Error> {
     let mut tcp_stream = std::net::TcpStream::connect(format!("{}:{}", domain, port))?;
 
     let config = if insecure {
@@ -69,6 +69,6 @@ pub fn get_certificates(
 
     match conn.peer_certificates() {
         Some(c) => Ok(c.to_vec()),
-        None => Err("no certificate found")?,
+        None => Err(anyhow!("no certificate found for {}", domain))?,
     }
 }
