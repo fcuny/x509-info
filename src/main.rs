@@ -27,11 +27,7 @@ struct Args {
 fn main() {
     let args = Args::parse();
 
-    let domain = args.domain;
-
-    let certs = client::get_certificates(domain, args.port, args.insecure);
-
-    match certs {
+    match client::get_certificates(args.domain, args.port, args.insecure) {
         Ok(certs) => {
             let (_, cert) =
                 x509_parser::certificate::X509Certificate::from_der(certs[0].as_ref()).unwrap();
