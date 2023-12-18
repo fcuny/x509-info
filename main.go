@@ -1,11 +1,12 @@
 package main
 
 import (
+	"crypto/tls"
+	"crypto/x509"
 	"flag"
 	"fmt"
 	"os"
-
-	"github.com/fcuny/x509-info/internal/x509"
+	"time"
 )
 
 const usage = `Usage:
@@ -13,7 +14,19 @@ const usage = `Usage:
 `
 
 func main() {
+
 	flag.Usage = func() { fmt.Fprintf(os.Stderr, "%s\n", usage) }
+
+	var (
+		portFlag         int
+		outputFormatFlag string
+		insecureFlag     bool
+	)
+
+	flag.IntVar(&portFlag, "port", 443, "Port to check")
+	flag.StringVar(&outputFormatFlag, "format", "short", "Format the output")
+	flag.BoolVar(&insecureFlag, "insecure", false, "Whether to bypass secure flag checks")
+
 	flag.Parse()
 
 	if flag.NArg() != 1 {
@@ -24,14 +37,46 @@ func main() {
 
 	domain := flag.Arg(0)
 
-	certs, err := x509.GetCertificates(domain, 443, false)
+	certs, err := getCertificates(domain, portFlag, insecureFlag)
 	if err != nil {
+		fmt.Fprintf(os.Stderr, "error: %v\n", err)
 		os.Exit(1)
 	}
 
-	for _, cert := range certs {
-		fmt.Printf("Issuer Name: %s\n", cert.Issuer)
-		fmt.Printf("Expiry: %s \n", cert.NotAfter.Format("2006-January-02"))
-		fmt.Printf("Common Name: %s \n", cert.Issuer.CommonName)
+	switch outputFormatFlag {
+	default:
+		printShort(certs)
+	}
+
+}
+
+func getCertificates(domain string, port int, insecureSkipVerify bool) ([]*x509.Certificate, error) {
+	conf := &tls.Config{
+		InsecureSkipVerify: insecureSkipVerify,
+	}
+
+	remote := fmt.Sprintf("%s:%d", domain, port)
+
+	conn, err := tls.Dial("tcp", remote, conf)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get the certificate for %s: %v", remote, err)
+	}
+
+	defer conn.Close()
+
+	certs := conn.ConnectionState().PeerCertificates
+	return certs, nil
+}
+
+func printShort(certs []*x509.Certificate) {
+	cert := certs[0]
+
+	now := time.Now()
+	remainingDays := cert.NotAfter.Sub(now)
+
+	if remainingDays > 0 {
+		fmt.Printf("%s: %s (%d days left)\n", cert.Subject.CommonName, cert.NotAfter.Format("01/02/2006"), int(remainingDays.Hours()/24))
+	} else {
+		fmt.Printf("%s: %s (expired %d days ago)\n", cert.Subject.CommonName, cert.NotAfter.Format("01/02/2006"), int(remainingDays.Abs().Hours()/24))
 	}
 }
