@@ -3,8 +3,10 @@ package main
 import (
 	"crypto/tls"
 	"crypto/x509"
+	"embed"
 	"flag"
 	"fmt"
+	"html/template"
 	"os"
 	"time"
 )
@@ -44,10 +46,11 @@ func main() {
 	}
 
 	switch outputFormatFlag {
+	case "long":
+		printLong(certs)
 	default:
 		printShort(certs)
 	}
-
 }
 
 func getCertificates(domain string, port int, insecureSkipVerify bool) ([]*x509.Certificate, error) {
@@ -78,5 +81,33 @@ func printShort(certs []*x509.Certificate) {
 		fmt.Printf("%s: %s (%d days left)\n", cert.Subject.CommonName, cert.NotAfter.Format("01/02/2006"), int(remainingDays.Hours()/24))
 	} else {
 		fmt.Printf("%s: %s (expired %d days ago)\n", cert.Subject.CommonName, cert.NotAfter.Format("01/02/2006"), int(remainingDays.Abs().Hours()/24))
+	}
+}
+
+//go:embed "long.tmpl"
+var tmplLong embed.FS
+
+func printLong(certs []*x509.Certificate) {
+
+	funcMap := template.FuncMap{
+		"validFor": func(before, after time.Time) int {
+			validForDays := after.Sub(before)
+			return int(validForDays.Hours() / 24)
+		},
+		"remainingDays": func(notAfter time.Time) int {
+			now := time.Now()
+			remainingDays := notAfter.Sub(now)
+			return int(remainingDays.Hours() / 24)
+		},
+	}
+
+	tmpl, err := template.New("long.tmpl").Funcs(funcMap).ParseFS(tmplLong, "*")
+	if err != nil {
+		panic(err)
+	}
+
+	err = tmpl.Execute(os.Stdout, certs[0])
+	if err != nil {
+		panic(err)
 	}
 }

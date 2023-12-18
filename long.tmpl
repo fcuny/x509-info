@@ -1,0 +1,16 @@
+certificate
+  version: {{ .Version }}
+  serial: {{ .SerialNumber }}
+  subject: {{ .Subject.CommonName }}
+  issuer: {{ .Issuer.CommonName }}
+
+validity:
+  not before: {{ .NotBefore.Format "01/02/2006 "}}
+  not after: {{ .NotAfter.Format "01/02/2006 "}}
+  validity days: {{ validFor .NotBefore .NotAfter }}
+  remaining days: {{ remainingDays .NotAfter }}
+
+SANs:
+{{- range $i, $name := .DNSNames }}
+  • {{ $name }}
+{{- end }}
