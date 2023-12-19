@@ -54,6 +54,7 @@
               go_1_21
               gopls
               golangci-lint
+              goreleaser
             ];
             devshell.startup = {
               pre-commit.text = config.pre-commit.installationScript;
