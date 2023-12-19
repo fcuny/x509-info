@@ -3,7 +3,6 @@ package main
 import (
 	"crypto/tls"
 	"crypto/x509"
-	"embed"
 	"flag"
 	"fmt"
 	"html/template"
@@ -12,8 +11,20 @@ import (
 )
 
 const usage = `Usage:
-    x509-inf [DOMAIN]
+    x509-info [DOMAIN]
+    x509-info (-f long) [DOMAIN]
+
+Options:
+    -f, --format      Format the result. Valid values: short, long. Default: short
+    -i, --insecure    Skip the TLS validation. Default: false
+    -p, --port        Specify the port. Default: 443
+    -v, --version     Print version information
+    -h, --help        Print this message
 `
+
+var (
+	Version, BuildDate string
+)
 
 func main() {
 
@@ -23,13 +34,28 @@ func main() {
 		portFlag         int
 		outputFormatFlag string
 		insecureFlag     bool
+		versionFlag      bool
 	)
 
 	flag.IntVar(&portFlag, "port", 443, "Port to check")
+	flag.IntVar(&portFlag, "p", 443, "Port to check")
 	flag.StringVar(&outputFormatFlag, "format", "short", "Format the output")
+	flag.StringVar(&outputFormatFlag, "f", "short", "Format the output")
 	flag.BoolVar(&insecureFlag, "insecure", false, "Whether to bypass secure flag checks")
+	flag.BoolVar(&insecureFlag, "i", false, "Whether to bypass secure flag checks")
+	flag.BoolVar(&versionFlag, "version", false, "Print version information")
+	flag.BoolVar(&versionFlag, "v", false, "Print version information")
 
 	flag.Parse()
+
+	if versionFlag {
+		if Version != "" {
+			fmt.Printf("version: %s, build on: %s\n", Version, BuildDate)
+			return
+		}
+		fmt.Println("(unknown)")
+		return
+	}
 
 	if flag.NArg() != 1 {
 		fmt.Fprintf(os.Stderr, "too many arguments: got %d, expected 1\n", flag.NArg())
@@ -84,8 +110,23 @@ func printShort(certs []*x509.Certificate) {
 	}
 }
 
-//go:embed "long.tmpl"
-var tmplLong embed.FS
+const tmplLong = `certificate
+  version: {{ .Version }}
+  serial: {{ .SerialNumber }}
+  subject: {{ .Subject.CommonName }}
+  issuer: {{ .Issuer.CommonName }}
+
+validity:
+  not before: {{ rfc1123 .NotBefore }}
+  not after: {{ rfc1123 .NotAfter }}
+  validity days: {{ validFor .NotBefore .NotAfter }}
+  remaining days: {{ remainingDays .NotAfter }}
+
+SANs:
+{{- range $i, $name := .DNSNames }}
+  • {{ $name }}
+{{- end }}
+`
 
 func printLong(certs []*x509.Certificate) {
 
@@ -104,7 +145,7 @@ func printLong(certs []*x509.Certificate) {
 		},
 	}
 
-	tmpl, err := template.New("long.tmpl").Funcs(funcMap).ParseFS(tmplLong, "*")
+	tmpl, err := template.New("tmpl").Funcs(funcMap).Parse(tmplLong)
 	if err != nil {
 		panic(err)
 	}

@@ -5,66 +5,48 @@ At this point it's pretty clear that I'll never remember the syntax for `openssl
 ## Usage
 
 ``` shell
-$ Usage: x509-info [OPTIONS] <DOMAIN>
-
-Arguments:
-  <DOMAIN>
-          Domain to check
+Usage:
+    x509-info [DOMAIN]
+    x509-info (-f long) [DOMAIN]
 
 Options:
-  -p, --port <PORT>
-          Port to check
-
-          [default: 443]
-
-  -i, --insecure
-          Accept invalid certificate
-
-  -f, --format <FORMAT>
-          [default: short]
-
-          Possible values:
-          - short: Format the output as one line of plain text
-          - long:  Format the output as plain text
-
-  -h, --help
-          Print help information (use `-h` for a summary)
-
-  -V, --version
-          Print version information
+    -f, --format      Format the result. Valid values: short, long. Default: short
+    -i, --insecure    Skip the TLS validation. Default: false
+    -p, --port        Specify the port. Default: 443
+    -v, --version     Print version information
+    -h, --help        Print this message
 ```
 
 The default format will print a short message:
-
 ``` shell
-$ x509-info twitter.com
-twitter.com: Mon, 11 Dec 2023 15:59:59 -0800 (257 days left)
+$ ./bin/x509-info github.com
+github.com, valid until Thu, 14 Mar 2024 23:59:59 UTC (86 days left)
 ```
 
 It's possible to get more details:
-
 ``` shell
-$ x509-info --format=long twitter.com
+$ ./bin/x509-info -f long github.com
 certificate
- version: V3
- serial: 0a:2c:01:b8:2b:5d:47:73:9a:5a:01:1a:6f:dc:1a:20
- subject: C=US, ST=California, L=San Francisco, O=Twitter, Inc., CN=twitter.com
- issuer: C=US, O=DigiCert Inc, CN=DigiCert TLS RSA SHA256 2020 CA1
- validity
-  not before    : Sat, 10 Dec 2022 16:00:00 -0800
-  not after     : Mon, 11 Dec 2023 15:59:59 -0800
-  validity days : 365
-  remaining days: 257
- SANs:
-  DNS:twitter.com
-  DNS:www.twitter.com
+  version: 3
+  serial: 17034156255497985825694118641198758684
+  subject: github.com
+  issuer: DigiCert TLS Hybrid ECC SHA384 2020 CA1
+
+validity:
+  not before: Tue, 14 Feb 2023 00:00:00 UTC
+  not after: Thu, 14 Mar 2024 23:59:59 UTC
+  validity days: 394
+  remaining days: 86
+
+SANs:
+  • github.com
+  • www.github.com
 ```
 
 You can also check expired certificates:
-
 ``` shell
-$ x509-info --insecure expired.badssl.com
-<no name>: Sun, 12 Apr 2015 16:59:59 -0700 (it expired -2907 days ago)
+$ ./bin/x509-info -i expired.badssl.com
+*.badssl.com, not valid since Sun, 12 Apr 2015 23:59:59 UTC (expired 3172 days ago)
 ```
 
 ## Notes
