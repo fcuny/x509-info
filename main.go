@@ -99,6 +99,9 @@ func printLong(certs []*x509.Certificate) {
 			remainingDays := notAfter.Sub(now)
 			return int(remainingDays.Hours() / 24)
 		},
+		"rfc1123": func(date time.Time) string {
+			return date.Format(time.RFC1123)
+		},
 	}
 
 	tmpl, err := template.New("long.tmpl").Funcs(funcMap).ParseFS(tmplLong, "*")

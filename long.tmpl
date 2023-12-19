@@ -5,8 +5,8 @@ certificate
   issuer: {{ .Issuer.CommonName }}
 
 validity:
-  not before: {{ .NotBefore.Format "01/02/2006 "}}
-  not after: {{ .NotAfter.Format "01/02/2006 "}}
+  not before: {{ rfc1123 .NotBefore }}
+  not after: {{ rfc1123 .NotAfter }}
   validity days: {{ validFor .NotBefore .NotAfter }}
   remaining days: {{ remainingDays .NotAfter }}
 
