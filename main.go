@@ -78,9 +78,9 @@ func printShort(certs []*x509.Certificate) {
 	remainingDays := cert.NotAfter.Sub(now)
 
 	if remainingDays > 0 {
-		fmt.Printf("%s: %s (%d days left)\n", cert.Subject.CommonName, cert.NotAfter.Format("01/02/2006"), int(remainingDays.Hours()/24))
+		fmt.Printf("%s, valid until %s (%d days left)\n", cert.Subject.CommonName, cert.NotAfter.Format(time.RFC1123), int(remainingDays.Hours()/24))
 	} else {
-		fmt.Printf("%s: %s (expired %d days ago)\n", cert.Subject.CommonName, cert.NotAfter.Format("01/02/2006"), int(remainingDays.Abs().Hours()/24))
+		fmt.Printf("%s, not valid since %s (expired %d days ago)\n", cert.Subject.CommonName, cert.NotAfter.Format(time.RFC1123), int(remainingDays.Abs().Hours()/24))
 	}
 }
 
