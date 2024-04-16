@@ -8,7 +8,7 @@ homepage = "https://git.fcuny.net/x509-info/about/"
 readme = "README.md"
 
 [dependencies]
-anyhow = "1.0.70"
+anyhow = "1.0.82"
 chrono = {version = "0.4.20", features = ["clock"], default-features = false }
 clap = {version = "4.0.18", features = ["derive", "cargo"]}
 rustls = {version = "0.20.7", features = ["dangerous_configuration"]}
