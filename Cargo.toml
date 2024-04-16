@@ -14,4 +14,4 @@ clap = {version = "4.0.18", features = ["derive", "cargo"]}
 rustls = {version = "0.20.7", features = ["dangerous_configuration"]}
 rustls-native-certs = "0.6.2"
 webpki-roots = "0.22.5"
-x509-parser = "0.14"
+x509-parser = "0.16"
