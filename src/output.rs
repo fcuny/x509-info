@@ -25,7 +25,9 @@ impl OutputFormat {
     }
 
     fn short(self, cert: X509Certificate) {
-        let not_after = chrono::Local.timestamp(cert.validity().not_after.timestamp(), 0);
+        let not_after = chrono::Local
+            .timestamp_opt(cert.validity().not_after.timestamp(), 0)
+            .unwrap();
         let now: DateTime<Local> = Local::now();
         let remaining = not_after - now;
 
@@ -55,8 +57,12 @@ impl OutputFormat {
     }
 
     fn to_text(self, cert: X509Certificate) {
-        let not_before = chrono::Local.timestamp(cert.validity().not_before.timestamp(), 0);
-        let not_after = chrono::Local.timestamp(cert.validity().not_after.timestamp(), 0);
+        let not_before = chrono::Local
+            .timestamp_opt(cert.validity().not_before.timestamp(), 0)
+            .unwrap();
+        let not_after = chrono::Local
+            .timestamp_opt(cert.validity().not_after.timestamp(), 0)
+            .unwrap();
         let now: DateTime<Local> = Local::now();
         let remaining = not_after - now;
         let validity_duration = not_after - not_before;

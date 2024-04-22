@@ -1,29 +1,60 @@
 use anyhow::{anyhow, Error};
-use rustls::{
-    Certificate, ClientConfig, ClientConnection, OwnedTrustAnchor, RootCertStore, ServerName,
-};
+use rustls::client::danger::{HandshakeSignatureValid, ServerCertVerified, ServerCertVerifier};
+use rustls::crypto::{ring, verify_tls12_signature, verify_tls13_signature, CryptoProvider};
+use rustls::pki_types::{self, CertificateDer, ServerName, UnixTime};
+use rustls::{ClientConfig, ClientConnection};
+use rustls::{DigitallySignedStruct, SignatureScheme};
 
 use std::io::Write;
 use std::sync::Arc;
 
-struct SkipServerVerification;
+#[derive(Debug)]
+struct NoCertificateVerification {}
 
-impl SkipServerVerification {
-    fn new() -> Arc<Self> {
-        Arc::new(Self)
-    }
-}
-impl rustls::client::ServerCertVerifier for SkipServerVerification {
+impl ServerCertVerifier for NoCertificateVerification {
     fn verify_server_cert(
         &self,
-        _end_entity: &rustls::Certificate,
-        _intermediates: &[rustls::Certificate],
-        _server_name: &rustls::ServerName,
-        _scts: &mut dyn Iterator<Item = &[u8]>,
+        _end_entity: &CertificateDer<'_>,
+        _intermediates: &[CertificateDer<'_>],
+        _server_name: &pki_types::ServerName<'_>,
         _ocsp_response: &[u8],
-        _now: std::time::SystemTime,
-    ) -> Result<rustls::client::ServerCertVerified, rustls::Error> {
-        Ok(rustls::client::ServerCertVerified::assertion())
+        _now: UnixTime,
+    ) -> Result<ServerCertVerified, rustls::Error> {
+        Ok(ServerCertVerified::assertion())
+    }
+
+    fn verify_tls12_signature(
+        &self,
+        message: &[u8],
+        cert: &CertificateDer<'_>,
+        dss: &DigitallySignedStruct,
+    ) -> Result<HandshakeSignatureValid, rustls::Error> {
+        verify_tls12_signature(
+            message,
+            cert,
+            dss,
+            &ring::default_provider().signature_verification_algorithms,
+        )
+    }
+
+    fn verify_tls13_signature(
+        &self,
+        message: &[u8],
+        cert: &CertificateDer<'_>,
+        dss: &DigitallySignedStruct,
+    ) -> Result<HandshakeSignatureValid, rustls::Error> {
+        verify_tls13_signature(
+            message,
+            cert,
+            dss,
+            &ring::default_provider().signature_verification_algorithms,
+        )
+    }
+
+    fn supported_verify_schemes(&self) -> Vec<SignatureScheme> {
+        ring::default_provider()
+            .signature_verification_algorithms
+            .supported_schemes()
     }
 }
 
@@ -31,30 +62,35 @@ pub fn get_certificates(
     domain: String,
     port: u16,
     insecure: bool,
-) -> Result<Vec<Certificate>, Error> {
+) -> Result<Vec<CertificateDer<'static>>, Error> {
     let mut tcp_stream = std::net::TcpStream::connect(format!("{}:{}", domain, port))?;
 
     let config = if insecure {
         ClientConfig::builder()
-            .with_safe_defaults()
-            .with_custom_certificate_verifier(SkipServerVerification::new())
+            .dangerous()
+            .with_custom_certificate_verifier(Arc::new(NoCertificateVerification {}))
             .with_no_client_auth()
     } else {
-        let mut root_store = RootCertStore::empty();
-        root_store.add_trust_anchors(webpki_roots::TLS_SERVER_ROOTS.0.iter().map(|ta| {
-            OwnedTrustAnchor::from_subject_spki_name_constraints(
-                ta.subject,
-                ta.spki,
-                ta.name_constraints,
-            )
-        }));
-        ClientConfig::builder()
-            .with_safe_defaults()
-            .with_root_certificates(root_store)
-            .with_no_client_auth()
+        let root_store = rustls::RootCertStore {
+            roots: webpki_roots::TLS_SERVER_ROOTS.to_vec(),
+        };
+        ClientConfig::builder_with_provider(
+            CryptoProvider {
+                cipher_suites: vec![ring::cipher_suite::TLS13_CHACHA20_POLY1305_SHA256],
+                kx_groups: vec![ring::kx_group::X25519],
+                ..ring::default_provider()
+            }
+            .into(),
+        )
+        .with_protocol_versions(&[&rustls::version::TLS13])
+        .unwrap()
+        .with_root_certificates(root_store)
+        .with_no_client_auth()
     };
 
-    let server_name = ServerName::try_from(domain.as_ref())?;
+    let server_name = ServerName::try_from(domain.clone())
+        .expect("invalid DNS name")
+        .to_owned();
 
     let mut conn = ClientConnection::new(Arc::new(config), server_name)?;
     while conn.wants_write() {
