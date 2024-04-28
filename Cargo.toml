@@ -9,9 +9,9 @@ readme = "README.md"
 
 [dependencies]
 anyhow = "1.0.82"
-chrono = {version = "0.4.20", features = ["clock"], default-features = false }
+chrono = {version = "0.4.38", features = ["clock"], default-features = false }
 clap = {version = "4.5.4", features = ["derive", "cargo"]}
-rustls = {version = "0.21.10", features = ["dangerous_configuration"]}
-rustls-native-certs = "0.6.2"
-webpki-roots = "0.22.5"
+rustls = {version = "0.23.5", features = ["ring"]}
+rustls-native-certs = "0.7.0"
+webpki-roots = "0.26.1"
 x509-parser = "0.16"
