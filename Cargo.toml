@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 authors = ["Franck Cuny <franck@fcuny.net>"]
 description = "Print summary of x509 certificates."
-homepage = "https://git.fcuny.net/x509-info/about/"
+homepage = "https://github.com/fcuny/x509-info/"
 readme = "README.md"
 
 [dependencies]
