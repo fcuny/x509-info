@@ -10,7 +10,7 @@ readme = "README.md"
 [dependencies]
 anyhow = "1.0.82"
 chrono = {version = "0.4.38", features = ["clock"], default-features = false }
-clap = {version = "4.5.4", features = ["derive", "cargo"]}
+clap = {version = "4.5.6", features = ["derive", "cargo"]}
 rustls = {version = "0.23.8", features = ["ring"]}
 rustls-native-certs = "0.7.0"
 webpki-roots = "0.26.1"
