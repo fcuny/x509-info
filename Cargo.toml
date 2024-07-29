@@ -11,7 +11,7 @@ readme = "README.md"
 anyhow = "1.0.82"
 chrono = {version = "0.4.38", features = ["clock"], default-features = false }
 clap = {version = "4.5.8", features = ["derive", "cargo"]}
-rustls = {version = "0.23.8", features = ["ring"]}
+rustls = {version = "0.23.12", features = ["ring"]}
 rustls-native-certs = "0.7.0"
 webpki-roots = "0.26.3"
 x509-parser = "0.16"
